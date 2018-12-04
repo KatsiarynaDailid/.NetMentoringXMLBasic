@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using LibrarySystem.Parsers;
 using LibrarySystem;
 using LibrarySystem.Entities;
 using LibrarySystem.Entities.Interfaces;
@@ -11,6 +12,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LibrarySystemTests
 {
+    /// <summary>
+    /// TODO:
+    /// - Move all static test data to a separate file
+    /// </summary>
     [TestClass]
     public class ReadWriteLibrarySystemTests
     {
@@ -28,8 +33,10 @@ namespace LibrarySystemTests
             var expectedBook = GetBookEntity();
             var expectedNewspaper = GetNewspaperEntity();
             var expectedPatent = GetPatentEntity();
+            StringReader stringReader = new StringReader(GetXmlToRead());
 
-            var actualResult = librarySystem.ReadFrom(new StringReader(GetXmlToRead()));
+            var actualResult = librarySystem.ReadFrom(stringReader);
+            stringReader.Dispose();
             var actualBook = (Book)actualResult.ToList().Where(x => x.GetType() == typeof(Book)).FirstOrDefault();
             var actualNewspaper = (Newspaper)actualResult.ToList().Where(x => x.GetType() == typeof(Newspaper)).FirstOrDefault();
             var actualPatent = (Patent)actualResult.ToList().Where(x => x.GetType() == typeof(Patent)).FirstOrDefault();
@@ -66,8 +73,18 @@ namespace LibrarySystemTests
                 expectedPatent.CountOfPages == actualPatent.CountOfPages &&
                 expectedPatent.DateOfPublication == actualPatent.DateOfPublication,
                 "Actual parsed patent is different from expected.");
+        }
 
-            //librarySystem.WriteTo(new List<IEntity> { book }, new StreamWriter(@"D:\1.txt"));
+        [TestMethod]
+        [ExpectedException(typeof(XmlValidationException))]
+        public void CheckReadFromXml_XmlValidationException()
+        {
+            var expectedBook = "<?xml version=\"1.0\" encoding=\"utf-16\"?><library>" +
+                GetBookWithoutNameXml() +
+                "</library>";
+            StringReader stringReader = new StringReader(expectedBook);
+            librarySystem.ReadFrom(stringReader);
+            stringReader.Dispose();
         }
 
         [TestMethod]
@@ -77,10 +94,11 @@ namespace LibrarySystemTests
                    GetBookXml() +
                    "</library>";
             StringBuilder actualBook = new StringBuilder();
-
-            librarySystem.WriteTo(new List<IEntity> { GetBookEntity() }, new StringWriter(actualBook));
+            StringWriter stringWriter = new StringWriter(actualBook);
+            librarySystem.WriteTo(new List<IEntity> { GetBookEntity() }, stringWriter);
 
             Assert.AreEqual(expectedBook.Trim(), actualBook.ToString().Trim());
+            stringWriter.Dispose();
         }
 
         [TestMethod]
@@ -90,10 +108,11 @@ namespace LibrarySystemTests
                    GetNewspaperXml() +
                    "</library>";
             StringBuilder actualNewspaper = new StringBuilder();
-
+            StringWriter stringWriter = new StringWriter(actualNewspaper);
             librarySystem.WriteTo(new List<IEntity> { GetNewspaperEntity() }, new StringWriter(actualNewspaper));
 
             Assert.AreEqual(expectedNewspaper.Trim(), actualNewspaper.ToString().Trim());
+            stringWriter.Dispose();
         }
 
         [TestMethod]
@@ -103,10 +122,11 @@ namespace LibrarySystemTests
                    GetPatentXml() +
                    "</library>";
             StringBuilder actualPatent = new StringBuilder();
-
+            StringWriter stringWriter = new StringWriter(actualPatent);
             librarySystem.WriteTo(new List<IEntity> { GetPatentEntity() }, new StringWriter(actualPatent));
 
             Assert.AreEqual(expectedPatent.Trim(), actualPatent.ToString().Trim());
+            stringWriter.Dispose();
         }
 
         #region Private
@@ -193,6 +213,22 @@ namespace LibrarySystemTests
         {
             return "<Book>" +
                 "<Name>It</Name>" +
+                "<Author>" +
+                "<FirstName>Stephen</FirstName>" +
+                "<LastName>King</LastName>" +
+                "</Author>" +
+                "<PlaceOfPublishing>USA</PlaceOfPublishing>" +
+                "<PublishingHouse>Scribner</PublishingHouse>" +
+                "<YearOfPublishing>2017</YearOfPublishing>" +
+                "<CountOfPages>1184</CountOfPages>" +
+                "<Notes />" +
+                "<ISBN>1501175467</ISBN>" +
+                "</Book>";
+        }
+
+        private string GetBookWithoutNameXml()
+        {
+            return "<Book>" +
                 "<Author>" +
                 "<FirstName>Stephen</FirstName>" +
                 "<LastName>King</LastName>" +
@@ -310,7 +346,6 @@ namespace LibrarySystemTests
                 "</Patent>" +
                 "</library>";
         }
-
 
         #endregion
 

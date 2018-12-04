@@ -1,43 +1,18 @@
-﻿using LibrarySystem.Actions.Interfaces;
-using LibrarySystem.Entities;
+﻿using LibrarySystem.Entities;
 using LibrarySystem.Entities.Interfaces;
-using LibrarySystem.Entities.SubEntities;
+using LibrarySystem.Writers.Abstract;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Linq;
 
-namespace LibrarySystem.Actions
+namespace LibrarySystem.Writers
 {
-    class PatentActions : IEntityActions
+    public class PatentWriter : EntityWriter
     {
-        public IEntity ParseEntity(XElement element)
-        {
-            Patent patent = new Patent();
-            var nodes = element.Elements();
-
-            patent.Name = element.Element("Name").Value;
-            patent.Authors = element.Elements("Author").Select(x => new Author
-            {
-                FirstName = x.Element("FirstName").Value ?? "None",
-                LastName = x.Element("LastName").Value
-            }).ToList();
-
-            patent.Country = element.Element("Country").Value ?? "None";
-            patent.RegistrationNumber = element.Element("RegistrationNumber").Value;
-            patent.ApplicationDate = DateTime.Parse(element.Element("ApplicationDate").Value);
-            patent.DateOfPublication = DateTime.Parse(element.Element("DateOfPublication").Value);
-            patent.Notes = element.Element("Notes").Value ?? "None";
-            patent.CountOfPages = int.Parse(element.Element("CountOfPages").Value);
-
-            return patent;
-        }
-
-        public void Write(IEntity source, XmlWriter writer)
+        public override void Write(IEntity source, XmlWriter writer)
         {
             Patent sourcePatent = source as Patent;
 
